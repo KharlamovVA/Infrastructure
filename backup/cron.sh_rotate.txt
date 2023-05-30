@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd /opt/backup/
+ls -1 -r | tail -n +31 | xargs rm -rf
+
