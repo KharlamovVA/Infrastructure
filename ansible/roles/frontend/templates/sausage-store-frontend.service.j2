@@ -1,0 +1,13 @@
+[Unit]
+Description=Run frontend
+
+[Service]
+User=frontservice
+StandardOutput=append:/logs/front/out-front.log
+Restart=always
+ExecStart=http-server /var/www-data/frontend -p 9100 --proxy http://localhost:9000
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,42 @@
+---
+# tasks file for backend
+
+- name: Update apt
+  apt: update_cache=yes
+
+- name: Install openjdk-17-jdk
+  apt: name=openjdk-17-jdk
+
+- name: Create user jarservice
+  user: name=jarservice state=present 
+
+- name: Create group jarusers
+  group: name=jarusers state=present
+
+- name: Inviting jarservice to jarusers
+  shell: usermod -aG jarusers jarservice
+
+- name: сreate directory for artefact
+  file: path=/var/jarservice state=directory
+
+- name: Copy artefact from Nexus to /var/jarservice
+  shell: sudo wget --http-user=std-017-017 --http-password={{ nexus_pass }} -O /var/jarservice/sausage-store.jar https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-backend-release/com/yandex/practicum/devops/sausage-store/1.0.642479/sausage-store-1.0.642479.jar
+
+- name: Change owner
+  shell: sudo chown -R jarservice:jarusers /var/jarservice
+
+- name: Create folder for output logs
+  file: path=/logs/back/ state=directory
+
+- name: Change owner
+  shell: sudo chown -R jarservice:jarservice /logs/back
+
+- name: Create service-file from template
+  template:
+        src: sausage-store-backend.service.j2
+        dest: /etc/systemd/system/sausage-store-backend.service
+  notify: Restart sausage-store-backend.service
+
+- name: Add service to autoloading
+  shell: systemctl enable sausage-store-backend.service
+ 

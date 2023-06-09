@@ -1,0 +1,57 @@
+---
+# tasks file for frontend
+
+- name: Update apt
+  apt: update_cache=yes
+
+- name: Add curl nodejs
+  shell: curl -fsSL https://deb.nodesource.com/setup_20.x
+
+- name: Update apt
+  apt: update_cache=yes
+
+- name: Install yarn
+  apt: name=yarn
+
+- name: Install nodejs
+  apt: name=nodejs
+
+- name: Install npm
+  apt: name=npm
+
+- name: Install http-server
+  shell: npm install --no-fund http-server
+
+- name: http-server
+  shell: npm install http-server -g
+
+- name: Create user frontservice
+  user: name=frontservice state=present
+ 
+- name: Create folder for artefact
+  file: path=/var/www-data/ state=directory
+
+- name: Copy artefact from Nexus to /var/www-data/dist
+  shell: wget --http-user=std-017-017 --http-password={{ nexus_pass }} -P /var/www-data/dist/ https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-frontend-release/com/yandex/practicum/devops/sausage-store/1.0.642478/sausage-store-1.0.642478.tar.gz
+
+- name: Unpack tar.gz file
+  shell: sudo tar -xzf /var/www-data/dist/sausage-store-1.0.642478.tar.gz -C /var/www-data/
+
+- name: Change owner
+  shell: sudo chown -R frontservice:frontservice /var/www-data
+
+- name: Create folder for output logs
+  file: path=/logs/front/ state=directory
+
+- name: Change owner
+  shell: sudo chown -R frontservice:frontservice /logs/front
+
+- name: Create service-file from template
+  template:
+        src: sausage-store-frontend.service.j2
+        dest: /etc/systemd/system/sausage-store-frontend.service
+  notify: Restart sausage-store-frontend.service
+
+- name: Add service to autoloading
+  shell: systemctl enable sausage-store-frontend.service
+
