@@ -32,10 +32,10 @@
   file: path=/var/www-data/ state=directory
 
 - name: Copy artefact from Nexus to /var/www-data/dist
-  shell: wget --http-user=std-017-017 --http-password={{ nexus_pass }} -P /var/www-data/dist/ https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-frontend-release/com/yandex/practicum/devops/sausage-store/1.0.642478/sausage-store-1.0.642478.tar.gz
+  shell: wget --http-user=std-017-017 --http-password={{ nexus_pass }} -P /var/www-data/dist/ https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-frontend-release/com/yandex/practicum/devops/sausage-store/{{ version }}/sausage-store-{{ version }}.tar.gz
 
 - name: Unpack tar.gz file
-  shell: sudo tar -xzf /var/www-data/dist/sausage-store-1.0.642478.tar.gz -C /var/www-data/
+  shell: sudo tar -xzf /var/www-data/dist/sausage-store-{{ version }}.tar.gz -C /var/www-data/
 
 - name: Change owner
   shell: sudo chown -R frontservice:frontservice /var/www-data
