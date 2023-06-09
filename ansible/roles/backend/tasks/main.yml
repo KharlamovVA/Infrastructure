@@ -20,7 +20,7 @@
   file: path=/var/jarservice state=directory
 
 - name: Copy artefact from Nexus to /var/jarservice
-  shell: sudo wget --http-user=std-017-017 --http-password={{ nexus_pass }} -O /var/jarservice/sausage-store.jar https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-backend-release/com/yandex/practicum/devops/sausage-store/1.0.642479/sausage-store-1.0.642479.jar
+  shell: sudo wget --http-user=std-017-017 --http-password={{ nexus_pass }} -O /var/jarservice/sausage-store.jar https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-backend-release/com/yandex/practicum/devops/sausage-store/{{ version }}/sausage-store-{{ version }}.jar
 
 - name: Change owner
   shell: sudo chown -R jarservice:jarusers /var/jarservice
