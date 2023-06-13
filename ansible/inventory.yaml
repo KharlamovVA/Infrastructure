@@ -1,6 +1,5 @@
-all: # Все серверы в нашем inventory, all - обязателен
-  children: # Дочерние группы для all
-    back_front: # Группа хостов с именем back_front
-      hosts:
-        #chapter5-ansible-std-017-017.praktikum-services.tech
-        51.250.82.241  # яндекс сейчас не разрешает доменное имя - по ip все работает
+[backend]
+sausage-store-back ansible_host=62.84.115.89
+
+[frontend]
+sausage-store-front ansible_host=62.84.115.89

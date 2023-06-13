@@ -1,8 +1,12 @@
 ---
-  - hosts: back_front
+  - hosts: backend
     become: true
     remote_user: ansible
     roles:
       - backend
+
+  - hosts: frontend
+    become: true
+    remote_user: ansible
+    roles:
       - frontend
-    

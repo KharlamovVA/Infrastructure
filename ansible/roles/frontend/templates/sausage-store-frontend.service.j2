@@ -2,12 +2,11 @@
 Description=Run frontend
 
 [Service]
-User=frontservice
-StandardOutput=append:/logs/front/out-front.log
+User={{ ssf_service_user }}
+StandardOutput=append:{{ log_path }}/out-front.log
 Restart=always
-ExecStart=http-server /var/www-data/frontend -p 9100 --proxy http://localhost:9000
+ExecStart=http-server {{ art_path }}/frontend -p 9100 --proxy http://localhost:9000
 SuccessExitStatus=143
 
 [Install]
 WantedBy=multi-user.target
-

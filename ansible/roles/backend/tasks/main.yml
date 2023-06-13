@@ -1,35 +1,54 @@
 ---
 # tasks file for backend
 
-- name: Update apt
-  apt: update_cache=yes
+- name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.apt:
+    update_cache: yes
 
-- name: Install openjdk-17-jdk
-  apt: name=openjdk-17-jdk
+- name: Install latest version of "openjdk-17-jdk" ignoring "install-recommends"
+  ansible.builtin.apt:
+    name: openjdk-17-jdk
+    state: latest
+    install_recommends: no
 
-- name: Create user jarservice
-  user: name=jarservice state=present 
+- name: Create a servise-group jarusers
+  group:
+    name:  "{{ ssb_service_group }}"
+    system: true
+    state: present
 
-- name: Create group jarusers
-  group: name=jarusers state=present
+- name: Create a service-user jarservice
+  ansible.builtin.user:
+    name: "{{ ssb_service_user }}"
+    group: "{{ ssb_service_group }}"
+    shell: /bin/bash
+    append: yes
 
-- name: Inviting jarservice to jarusers
-  shell: usermod -aG jarusers jarservice
+- name: Create a directory /var/jarservice for artefact
+  ansible.builtin.file:
+    path: "{{ art_path }}"
+    state: directory
+    owner: "{{ ssb_service_user }}"
+    group: "{{ ssb_service_group }}"
+    mode: '0755'
 
-- name: сreate directory for artefact
-  file: path=/var/jarservice state=directory
+- name: Copy artefact from Nexus to artefact directory
+  ansible.builtin.get_url:
+    url: https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-backend-release/com/yandex/practicum/devops/sausage-store/{{ version }}/sausage-store-{{ version }}.jar
+    dest: "{{ art_path }}"
+    username: std-017-017
+    password: "{{ nexus_pass }}"
+    owner: "{{ ssb_service_user }}"
+    group: "{{ ssb_service_group }}"
 
-- name: Copy artefact from Nexus to /var/jarservice
-  shell: sudo wget --http-user=std-017-017 --http-password={{ nexus_pass }} -O /var/jarservice/sausage-store.jar https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-backend-release/com/yandex/practicum/devops/sausage-store/{{ version }}/sausage-store-{{ version }}.jar
-
-- name: Change owner
-  shell: sudo chown -R jarservice:jarusers /var/jarservice
-
-- name: Create folder for output logs
-  file: path=/logs/back/ state=directory
-
-- name: Change owner
-  shell: sudo chown -R jarservice:jarservice /logs/back
+- name: Create a directory for output logs
+  ansible.builtin.file:
+    path: "{{ log_path }}"
+    state: directory
+    recurse: yes
+    owner: "{{ ssb_service_user }}"
+    group: "{{ ssb_service_group }}"
+    mode: '0755'
 
 - name: Create service-file from template
   template:
@@ -37,6 +56,7 @@
         dest: /etc/systemd/system/sausage-store-backend.service
   notify: Restart sausage-store-backend.service
 
-- name: Add service to autoloading
-  shell: systemctl enable sausage-store-backend.service
- 
+- name: Add sausage-store-backend.service to autoloading
+  ansible.builtin.service:
+    name: sausage-store-backend.service
+    enabled: yes
