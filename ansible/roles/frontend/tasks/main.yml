@@ -1,50 +1,73 @@
 ---
 # tasks file for frontend
 
-- name: Update apt
-  apt: update_cache=yes
-
-- name: Add curl nodejs
-  shell: curl -fsSL https://deb.nodesource.com/setup_20.x
-
-- name: Update apt
-  apt: update_cache=yes
-
-- name: Install yarn
-  apt: name=yarn
+- name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.apt:
+    update_cache: yes
 
 - name: Install nodejs
-  apt: name=nodejs
+  ansible.builtin.apt:
+    name: nodejs
+    update_cache: yes
+    cache_valid_time: 3600
 
 - name: Install npm
-  apt: name=npm
+  ansible.builtin.apt:
+    name: npm
 
 - name: Install http-server
-  shell: npm install --no-fund http-server
-
-- name: http-server
   shell: npm install http-server -g
 
-- name: Create user frontservice
-  user: name=frontservice state=present
- 
-- name: Create folder for artefact
-  file: path=/var/www-data/ state=directory
+- name: Create a servise-user frontservice
+  ansible.builtin.user:
+    name: "{{ ssf_service_user }}"
+    shell: /bin/bash
+    append: yes
 
-- name: Copy artefact from Nexus to /var/www-data/dist
-  shell: wget --http-user=std-017-017 --http-password={{ nexus_pass }} -P /var/www-data/dist/ https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-frontend-release/com/yandex/practicum/devops/sausage-store/{{ version }}/sausage-store-{{ version }}.tar.gz
+- name: Create a directory /var/www-data for artefact
+  ansible.builtin.file:
+    path: "{{ art_path }}"
+    state: directory
+    owner: "{{ ssf_service_user }}"
+    group: "{{ ssf_service_user }}"
+    mode: '0755'
 
-- name: Unpack tar.gz file
-  shell: sudo tar -xzf /var/www-data/dist/sausage-store-{{ version }}.tar.gz -C /var/www-data/
+- name: Copy artefact from Nexus to /var/www-data
+  ansible.builtin.get_url:
+    url: https://nexus.k8s.praktikum-services.tech/repository/sausage-store-kharlamov-vasily-frontend-release/com/yandex/practicum/devops/sausage-store/{{ version }}/sausage-store-{{ version }}.tar.gz
+    dest: "{{ art_path }}"
+    username: std-017-017
+    password: '{{ nexus_pass }}'
+    owner: "{{ ssf_service_user }}"
+    group: "{{ ssf_service_user }}"
 
-- name: Change owner
-  shell: sudo chown -R frontservice:frontservice /var/www-data
+- name: Unpack tar.gz file to the same directory
+  ansible.builtin.unarchive:
+    src: "{{ art_path }}/sausage-store-{{ version }}.tar.gz"
+    dest: "{{ art_path }}"
+    remote_src: yes
+
+- name: Remove archive file
+  ansible.builtin.file:
+    path: "{{ art_path }}/sausage-store-{{ version }}.tar.gz"
+    state: absent
+
+- name: Change owner of artefact directory
+  file:
+    path: "{{ art_path }}"
+    owner: "{{ ssf_service_user }}"
+    group: "{{ ssf_service_user }}"
+    state: directory
+    recurse: yes
 
 - name: Create folder for output logs
-  file: path=/logs/front/ state=directory
-
-- name: Change owner
-  shell: sudo chown -R frontservice:frontservice /logs/front
+  ansible.builtin.file:
+    path: /logs/front
+    state: directory
+    recurse: yes
+    owner: "{{ ssf_service_user }}"
+    group: "{{ ssf_service_user }}"
+    mode: '0755'
 
 - name: Create service-file from template
   template:
@@ -52,6 +75,7 @@
         dest: /etc/systemd/system/sausage-store-frontend.service
   notify: Restart sausage-store-frontend.service
 
-- name: Add service to autoloading
-  shell: systemctl enable sausage-store-frontend.service
-
+- name: Add sausage-store-frontend.service to autoloading
+  ansible.builtin.service:
+    name: sausage-store-frontend.service
+    enabled: yes
